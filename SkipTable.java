@@ -15,43 +15,70 @@ public class SkipTable{
     }
 
 
-    private void createSkipTable(){
-        // make array with pattern (split into say A B C as column and row as ABABABC)
-        int rows = pattern.length();
-        int cols = alphabet.length;
-        skipTable = new int[rows][cols];
+    private void createSkipTable() {
+        int patLen = pattern.length();
+        int rowCount = alphabet.length + 1; // +1 for wildcard row
 
-        // Fill the matrix
-        for (int i = 0; i < rows; i++) {
-            char tChar = pattern.charAt(i); // target character at position i
-            for (int j = 0; j < cols; j++) {
-                char pChar = alphabet[j];   // pattern character at position j
-                if (tChar == pChar) {
-                    skipTable[i][j] = 1;  // mark match
+        skipTable = new int[rowCount][patLen];
+        
+        // For each position in the pattern
+        for (int j = 0; j < patLen; j++) {
+            char patternChar = pattern.charAt(j);
+            
+            // Process each character in our alphabet
+            for (int i = 0; i < alphabet.length; i++) {
+                char currentChar = alphabet[i];
+                
+                if (currentChar == patternChar) {
+                    // If characters match at this position, no skip needed
+                    skipTable[i][j] = 0;
                 } else {
-                    skipTable[i][j] = 0;  // mark no match
+                    // Calculate proper skip value for mismatch
+                    int skip = calculateSkip(j, currentChar);
+                    skipTable[i][j] = skip;
                 }
+            }
+            
+            // Handle the wildcard row (last row) - simply j+1 for each position 
+            // Wildcard technically not part of the alphabet
+            int wildcardRow = alphabet.length;
+            skipTable[wildcardRow][j] = j + 1;
+        }
+    }
+
+    private int calculateSkip(int mismatchPos, char mismatchChar) {
+        if (mismatchPos == 0) return 1;
+
+        for (int len = mismatchPos; len > 0; len--) {
+            // Check prefix[0..len-2] vs suffix of length len-1 ending before mismatchPos
+            boolean match = true;
+            for (int i = 0; i < len - 1; i++) {
+                int suffixIndex = mismatchPos - len + i + 1;
+                if (pattern.charAt(i) != pattern.charAt(suffixIndex)) {
+                    match = false;
+                    break;
+                }
+            }
+
+            // Check if mismatchChar matches the expected continuation
+            if (match && pattern.charAt(len - 1) == mismatchChar) {
+                return mismatchPos - len + 1;
             }
         }
 
-
-        skipTable = new int[][]{
-            {0, 1, 0, 3, 2}, // *
-            {1, 0, 3, 0, 5}, // a
-            {1, 2, 3, 4, 0}, // b
-            {1, 2, 3, 4, 5}  // c
-        };
+        return mismatchPos + 1; // Default: skip all and start fresh
     }
+    
 
     private void createAlphabet(){
         // Create Skip table from string
-        Set<Character> uniqueChar = new LinkedHashSet<>();
+        Set<Character> uniqueChars = new TreeSet<>(); // TreeSet keeps it alphabetically sorted
 
         for (char c : pattern.toCharArray()) {
-            uniqueChar.add(c);
+            uniqueChars.add(c);
         }
 
-        alphabet = uniqueChar.toArray(new Character[0]);
+        alphabet = uniqueChars.toArray(new Character[0]);
     }
 
 
@@ -65,15 +92,30 @@ public class SkipTable{
     }
 
 
-    public void print(){
-        for (int[] row : skipTable) {
-            for (int value : row) {
-                System.out.print(value + " ");
+    public void print() {
+        // Print the header row: *,<pattern characters>
+        System.out.print("*");
+        for (int j = 0; j < pattern.length(); j++) {
+            System.out.print("," + pattern.charAt(j));
+        }
+        System.out.println();
+
+        // Print rows for each character in the alphabet
+        for (int i = 0; i < alphabet.length; i++) {
+            System.out.print(alphabet[i]); // Row label
+            for (int j = 0; j < pattern.length(); j++) {
+                System.out.print("," + skipTable[i][j]);
             }
             System.out.println();
         }
-    }
 
+        // Print the wildcard row
+        System.out.print("*");
+        for (int j = 0; j < pattern.length(); j++) {
+            System.out.print("," + skipTable[alphabet.length][j]);
+        }
+        System.out.println();
+    }
 
     public int getSkipNum(int patternIndex, int tableIndex){
         return skipTable[patternIndex][tableIndex];
