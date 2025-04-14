@@ -5,98 +5,31 @@ import java.util.*;
 
 public class KMPsearch{
 
-    int[][] skipTable;
+    SkipTable skipTable;
 
-	public KMPsearch(String target){
-        createSkipTable(target);
+	public KMPsearch(SkipTable _skipTable){
+        skipTable = _skipTable;
 	}
-
-	public int[][] createSkipTable(String target){
-		// Create Skip table from string
-
-        Set<Character> patternChar = new LinkedHashSet<>();
-
-        for (char c : target.toCharArray()) {
-            patternChar.add(c);
-        }
-
-        Character[] pattern = patternChar.toArray(new Character[0]);
-
-
-		// make array with pattern (split into say A B C as column and row as ABABABC)
-		int rows = target.length();
-		int cols = pattern.length;
-		int[][] matrix = new int[rows][cols];
-
-
-
-		// Fill the matrix
-        for (int i = 0; i < rows; i++) {
-            char tChar = target.charAt(i); // target character at position i
-            for (int j = 0; j < cols; j++) {
-                char pChar = pattern[j];   // pattern character at position j
-                if (tChar == pChar) {
-                    matrix[i][j] = 1;  // mark match
-                } else {
-                    matrix[i][j] = 0;  // mark no match
-                }
-            }
-        }
-
-        return matrix;
-	}
-
-    public void printSkipTable(){
-        skipTable = new int[][]{
-            {0, 1, 0, 3, 2}, // *
-            {1, 0, 3, 0, 5}, // a
-            {1, 2, 3, 4, 0}, // b
-            {1, 2, 3, 4, 5}  // c
-        };
-        for (int[] row : skipTable) {
-            for (int value : row) {
-                System.out.print(value + " ");
-            }
-            System.out.println();
-        }
-        
-    }
-
-
 
 	public void searchFile(File file){
-        skipTable = new int[][]{
-            {0, 1, 0, 3, 2}, // a
-            {1, 0, 3, 0, 5}, // b
-            {1, 2, 3, 4, 0}, // c
-            {1, 2, 3, 4, 5}  // *
-        };
 
         // get file input
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            String target = "ababc";
+            String target = skipTable.getPattern();
             while ((line = reader.readLine()) != null) {
                 // we have the line. Read it character by character
                 char[] lineChar = line.toCharArray();
                 int lineIndex = 0;
                 int matrixIndex = 0;
 
-
-                //System.out.println(line + "\n");
-
-
                 // loop until end of line
                 while(lineIndex < lineChar.length){
-                    
-
                     // give which part of the skip table your up to (which column) and the character your checking (which row)
                     char currentChar = lineChar[lineIndex];
-                    int patternIndex = patternConversion(currentChar);
+                    int patternIndex = skipTable.alphabetConversion(currentChar);
 
-                    //System.out.println(currentChar);
-
-                    int skipNum = skipTable[patternIndex][matrixIndex];
+                    int skipNum = skipTable.getSkipNum(patternIndex, matrixIndex);
 
                     // skip ahead amount returned by array
                     if(skipNum != 0){
@@ -109,7 +42,7 @@ public class KMPsearch{
                     }
 
                     if(target.length() == matrixIndex){
-                        System.out.println(lineIndex - target.length() + ": " + line + "\n");
+                        System.out.println(lineIndex + 1 - target.length() + ": " + line);
                         break;
                     }
                 }
@@ -121,23 +54,6 @@ public class KMPsearch{
         }
 	}
 
-
-    public int patternConversion(char c){
-        char[] pattern = new char[] {'a', 'b', 'c'};
-        for(int i=0; i<pattern.length; i++){
-            if(pattern[i] == c){
-                return i;
-            }
-        }
-        return pattern.length;
-    }
-
-
-	public void outputLine(){
-
-	}
-
-
 	/**    
      * Main method to run the sort.
      */
@@ -147,19 +63,21 @@ public class KMPsearch{
             return;
         }
 
-        String target = args[0];
-        KMPsearch kmp = new KMPsearch(target);
+        String pattern = args[0];
+
+        SkipTable skipTable = new SkipTable(pattern);
 
         if (args.length >= 2) {
             // If filename is provided, search file
             String filename = args[1];
+            // Create kmp search instance
+            KMPsearch kmp = new KMPsearch(skipTable);
+            // Search using file
             kmp.searchFile(new File(filename));
         } else {
             // No filename provided, print the skip table
-            kmp.printSkipTable();
+            skipTable.print();
         }
 
     }
-
-
 }
