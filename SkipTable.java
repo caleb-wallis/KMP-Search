@@ -1,20 +1,37 @@
+
 import java.io.*;
 import java.util.*;
 
+/**
+ * Represents a skip table used in the KMP search algorithm.
+ * The table is built based on a pattern and contains skip values
+ * for each character in the pattern and its alphabet.
+ * 
+ * @author Caleb Wallis - 1637640
+ * 
+ * Used ChatGpt to help write javadoc and inline comments
+ */
 public class SkipTable{
 
     private String pattern;
     private Character[] alphabet;
     private int[][] skipTable;
 
-    public SkipTable(String _pattern){
+    /**
+     * Constructs the SkipTable for the given pattern.
+     *
+     * @param _pattern the string pattern to build the skip table from
+     */
+    public SkipTable(String pattern){
 
-        pattern = _pattern;
-        createAlphabet();
-        createSkipTable();
+        this.pattern = pattern;
+        createAlphabet(); // Build alphabet from pattern
+        createSkipTable(); // Build skip table from pattern and alphabet
     }
 
-
+    /**
+     * Builds the skip table matrix based on the pattern and alphabet.
+     */
     private void createSkipTable() {
         int patLen = pattern.length();
         int rowCount = alphabet.length + 1; // +1 for wildcard row
@@ -46,12 +63,21 @@ public class SkipTable{
         }
     }
 
+    /**
+     * Calculates the number of characters to skip when a mismatch occurs.
+     *
+     * @param mismatchPos the index in the pattern where mismatch happened
+     * @param mismatchChar the character that caused the mismatch
+     * @return the number of characters to skip
+     */
     private int calculateSkip(int mismatchPos, char mismatchChar) {
         if (mismatchPos == 0) return 1;
 
+        // Try all prefix lengths from longest to shortest
         for (int len = mismatchPos; len > 0; len--) {
-            // Check prefix[0..len-2] vs suffix of length len-1 ending before mismatchPos
             boolean match = true;
+
+            // Compare prefix with suffix
             for (int i = 0; i < len - 1; i++) {
                 int suffixIndex = mismatchPos - len + i + 1;
                 if (pattern.charAt(i) != pattern.charAt(suffixIndex)) {
@@ -66,22 +92,32 @@ public class SkipTable{
             }
         }
 
-        return mismatchPos + 1; // Default: skip all and start fresh
+        // No match: skip all the way to next character
+        return mismatchPos + 1; 
     }
     
-
+    /**
+     * Creates an alphabet of unique characters used in the pattern.
+     */
     private void createAlphabet(){
-        // Create Skip table from string
+        // Extract unique characters from the pattern
         Set<Character> uniqueChars = new TreeSet<>(); // TreeSet keeps it alphabetically sorted
-
         for (char c : pattern.toCharArray()) {
             uniqueChars.add(c);
         }
 
+        // Store alphabet as sorted array
         alphabet = uniqueChars.toArray(new Character[0]);
     }
 
 
+    /**
+     * Converts a character to its index in the alphabet.
+     * Returns the wildcard index if character is not in the alphabet.
+     *
+     * @param c the character to convert
+     * @return the index of the character in the alphabet, or wildcard index
+     */
     public int alphabetConversion(char c){
         for(int i=0; i<alphabet.length; i++){
             if(alphabet[i] == c){
@@ -92,6 +128,9 @@ public class SkipTable{
     }
 
 
+    /**
+     * Prints the skip table to stdout.
+     */
     public void print() {
         // Print the header row: *,<pattern characters>
         System.out.print("*");
@@ -117,10 +156,22 @@ public class SkipTable{
         System.out.println();
     }
 
+    /**
+     * Retrieves the skip number from the skip table.
+     *
+     * @param patternIndex the row index in the skip table
+     * @param tableIndex the column index in the skip table
+     * @return the skip number
+     */
     public int getSkipNum(int patternIndex, int tableIndex){
         return skipTable[patternIndex][tableIndex];
     }
 
+    /**
+     * Gets the pattern string used to build the skip table.
+     *
+     * @return the pattern string
+     */
     public String getPattern(){
         return pattern;
     }
