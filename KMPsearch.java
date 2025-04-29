@@ -42,6 +42,7 @@ public class KMPsearch{
                 char[] lineChar = line.toCharArray();
                 int lineIndex = 0;
                 int matrixIndex = 0;
+                int searchStart = 0;
 
                 // Loop through the line one character at a time
                 while(lineIndex < lineChar.length){
@@ -54,9 +55,12 @@ public class KMPsearch{
                     int skipNum = skipTable.getSkipNum(patternIndex, matrixIndex);
 
                     if(skipNum != 0){
-                         // Mismatch found: skip ahead by skipNum
+                        // Mismatch found:
                         matrixIndex = 0;
-                        lineIndex+= skipNum;
+                         // Skip to this point
+                        searchStart += skipNum;
+                        // Start searching again from there
+                        lineIndex = searchStart;
                     }
                     else{
                         // Match so far: move forward one character
